@@ -1,0 +1,35 @@
+step,channel,subject_or_note,message,cta
+1,email,Quick idea to show {{product}} faster,"Hi {{first_name}},
+
+I noticed {{company}} recently shipped {{feature}}. We make short product demo & explainer videos that reduce demo time and increase trial→paid conversion.
+
+Can I share 2 quick ideas you could use on your landing page or pricing page?
+
+— {{your_name}}",Book 15-min (Calendly)
+2,linkedin,Connect request,"Hi {{first_name}} — I help product teams turn demos into conversion-driving videos. I’d love to share a quick idea if you’re open.","If connected → send follow-up message"
+3,email,[Case study] 1-line result for {{company}},"Hi {{first_name}},
+
+Quick note — we helped a SaaS like yours increase trial conversion by ~12% with a 60s demo video. Short case: [one-line result + portfolio link].
+
+If you’re open, I’ll record a 60s idea specific to {{product}} — no cost. Interested?
+
+— {{your_name}}",Share free 60s idea (Calendly)
+4,video (Loom),60s idea for {{company}},"Hi {{first_name}},
+
+I recorded a 60s screen video with two specific ideas for {{company}}: [insert Loom link].
+
+If any of this clicks, pick a 15-min slot: {{calendly_link}}
+
+— {{your_name}}","Watch Loom → Book"
+5,email,Results you can ship in 7–14 days,"Hi {{first_name}},
+
+We deliver production + motion in **7–14 days** for product teams. If you have an upcoming launch, we can be ready quickly.
+
+Available slots: {{calendly_link}}
+
+— {{your_name}}",Book fast-start
+6,email,One last idea for {{company}},"Hi {{first_name}},
+
+If now isn’t right, no worries — let me know when makes sense. If it is, one 15-min chat is all we need: {{calendly_link}}
+
+— {{your_name}}",Final try — book call

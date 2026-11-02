@@ -1,0 +1,451 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider  = "postgresql"
+  url       = env("DATABASE_URL")
+  directUrl = env("DIRECT_URL")
+}
+
+model Account {
+  id                 String  @id @default(cuid())
+  userId             String  @map("user_id")
+  type               String
+  provider           String
+  providerAccountId  String  @map("provider_account_id") @db.VarChar(255)
+  refresh_token      String?
+  access_token       String?
+  expires_at         Int?
+  token_type         String?
+  scope              String?
+  id_token           String?
+  session_state      String?
+  oauth_token        String?
+  oauth_token_secret String?
+  user               User    @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([provider, providerAccountId])
+  @@index([userId])
+  @@index([provider])
+  @@map("accounts")
+}
+
+model Session {
+  id           String   @id @default(cuid())
+  sessionToken String   @unique @map("session_token")
+  userId       String   @map("user_id")
+  expires      DateTime
+  user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([expires])
+  @@index([userId, expires])
+  @@map("sessions")
+}
+
+model User {
+  id                   String            @id @default(cuid())
+  name                 String?
+  email                String?           @unique
+  password             String?
+  emailVerified        DateTime?         @map("email_verified")
+  image                String?
+  role                 Role?
+  createdAt            DateTime          @default(now()) @map("created_at")
+  updatedAt            DateTime          @updatedAt @map("updated_at")
+  resetPasswordToken   String?           @map("reset_password_token")
+  resetPasswordExpires DateTime?         @map("reset_password_expires")
+  recruiterProfile     RecruiterProfile?
+  accounts             Account[]
+  candidateProfile     CandidateProfile?
+  collegeProfile       CollegeProfile?
+  sessions             Session[]
+
+  @@index([email])
+  @@index([role])
+  @@index([createdAt])
+  @@map("users")
+}
+
+model VerificationToken {
+  identifier String
+  token      String
+  expires    DateTime
+
+  @@unique([identifier, token])
+  @@index([expires])
+  @@index([identifier])
+  @@map("verificationtokens")
+}
+
+model PasswordResetToken {
+  id        Int      @id @default(autoincrement())
+  email     String
+  token     String   @unique
+  expiresAt DateTime
+}
+
+enum PaymentGateway {
+  RAZORPAY
+  PHONEPE
+}
+
+model MembershipOrder {
+  id                  String           @id @default(cuid())
+  candidateId         String
+  planType            PlanType
+  planName            String
+  paymentGateway               PaymentGateway? @default(PHONEPE)
+  phonePeTransactionId         String?         @unique
+  phonePeMerchantTransactionId String?
+  razorpayOrderId     String?          @unique
+  razorpayPaymentId   String?          @unique
+  razorpaySignature   String?
+  status              PaymentStatus    @default(PENDING)
+  amount              Int
+  currency            String           @default("INR")
+  startsAt            DateTime?
+  expiresAt           DateTime?
+  isActive            Boolean          @default(false)
+  isCollegeRegistered Boolean
+  originalPrice       Int
+  discountApplied     Int?
+  failureReason       String?
+  notes               String?
+  webhookProcessed    Boolean          @default(false)
+  lastWebhookAt       DateTime?
+  webhookData         Json?
+  createdAt           DateTime         @default(now())
+  updatedAt           DateTime         @updatedAt
+  candidate           CandidateProfile @relation(fields: [candidateId], references: [id], onDelete: Cascade)
+
+  @@index([candidateId])
+  @@index([status])
+  @@index([razorpayOrderId])
+  @@index([razorpayPaymentId])
+  @@index([isActive, expiresAt])
+  @@index([webhookProcessed])
+  @@index([createdAt])
+  @@index([planType])
+  @@map("membership_orders")
+}
+
+model CandidateProfile {
+  id                   String            @id @default(cuid())
+  userId               String            @unique
+  fullName             String            @db.VarChar(255)
+  phone                String?
+  position             String?           @db.VarChar(255)
+  location             String?
+  linkedin             String?
+  profilePhoto         String?
+  resumeLink           String?
+  summary              String?
+  makePublic           Boolean           @default(false)
+  jobType              JobType?
+  preferredLocation    LocationPref?
+  experienceRange      ExperienceRange?
+  minimumPay           String?
+  gender               Gender?
+  currentLocation      String?
+  hometown             String?
+  preferredLocations   String[]
+  preferredJobTitles   String[]
+  noticePeriod         NoticePeriod?
+  immediatelyAvailable Boolean           @default(false)
+  lookingfor           lookingfor?
+  languages            String[]
+  collegeId            String?
+  branch               String?           @db.VarChar(255)
+  batch                String?
+  placementStatus      PlacementStatus?
+  uniqueCollegeId      String?           @unique
+  membership           Membership        @default(FREE)
+  membershipExpiresAt  DateTime?
+  applications         Application[]
+  college              CollegeProfile?   @relation(fields: [collegeId], references: [id])
+  user                 User              @relation(fields: [userId], references: [id], onDelete: Cascade)
+  educations           Education[]
+  experiences          Experience[]
+  membershipOrders     MembershipOrder[]
+  skills               Skill[]
+
+  @@index([jobType, preferredLocation, experienceRange])
+  @@index([lookingfor, immediatelyAvailable])
+  @@index([minimumPay, experienceRange])
+  @@index([gender, location])
+  @@index([fullName])
+  @@index([position])
+  @@index([collegeId])
+  @@index([membership])
+  @@index([membershipExpiresAt])
+  @@map("candidate_profiles")
+}
+
+model Education {
+  id             String           @id @default(cuid())
+  profileId      String
+  degree         String
+  institution    String
+  location       String?
+  startDate      String
+  endDate        String?
+  current        Boolean          @default(false)
+  grade          String
+  description    String?
+  educationLevel EducationLevel?
+  profile        CandidateProfile @relation(fields: [profileId], references: [id], onDelete: Cascade)
+
+  @@index([profileId])
+  @@index([profileId, current])
+  @@index([educationLevel])
+  @@index([institution])
+  @@map("educations")
+}
+
+model Experience {
+  id             String           @id @default(cuid())
+  profileId      String
+  title          String
+  company        String
+  location       String?
+  startDate      String
+  endDate        String?
+  current        Boolean          @default(false)
+  description    String?
+  experienceType String?
+  profile        CandidateProfile @relation(fields: [profileId], references: [id], onDelete: Cascade)
+
+  @@index([profileId])
+  @@index([profileId, current])
+  @@index([company])
+  @@index([title])
+  @@index([experienceType])
+  @@map("experiences")
+}
+
+model Skill {
+  id        String           @id @default(cuid())
+  profileId String
+  name      String
+  level     SkillLevel       @default(INTERMEDIATE)
+  profile   CandidateProfile @relation(fields: [profileId], references: [id], onDelete: Cascade)
+
+  @@unique([profileId, name])
+  @@index([profileId])
+  @@index([name])
+  @@index([name, level])
+  @@index([level])
+  @@map("skills")
+}
+
+model RecruiterProfile {
+  id                String             @id @default(cuid())
+  userId            String             @unique
+  fullName          String
+  companyName       String?
+  companyWebsite    String?
+  phone             String?
+  location          String?
+  about             String?
+  profilePhoto      String?
+  makePublic        Boolean            @default(false)
+  activeJobCount    Int                @default(0)
+  applicationCount  Int                @default(0)
+  createdAt         DateTime           @default(now())
+  hiringRate        Float              @default(0)
+  industry          String?
+  interviewCount    Int                @default(0)
+  linkedinUrl       String?
+  twitterHandle     String?
+  updatedAt         DateTime           @updatedAt
+  recruiterNumber   String?
+  workLocation      String?
+  applicationGroups ApplicationGroup[]
+  jobs              Job[]
+  pipelines         Pipeline[]
+  user              User               @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+model CollegeProfile {
+  id         String             @id @default(cuid())
+  userId     String             @unique
+  name       String             @db.VarChar(255)
+  createdAt  DateTime           @default(now()) @map("created_at")
+  updatedAt  DateTime           @updatedAt @map("updated_at")
+  email      String?            @db.VarChar(255)
+  phone      String?            @db.VarChar(50)
+  website    String?            @db.VarChar(255)
+  address    String?
+  candidates CandidateProfile[]
+  user       User               @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([name])
+  @@map("college_profiles")
+}
+
+model Job {
+  id              String           @id @default(cuid())
+  title           String
+  description     String
+  location        String
+  skillsRequired  String[]         @default([])
+  isOpen          Boolean          @default(true)
+  postedAt        DateTime         @default(now())
+  recruiterId     String
+  department      String?
+  experienceLevel String?
+  expiresAt       DateTime?
+  extraQuestions  String[]         @default([])
+  jobType         String?
+  salaryRangeMax  Int?
+  salaryRangeMin  Int?
+  workplaceType   String?
+  quickApply      Boolean          @default(true)
+  externalLink    String?
+  applications    Application[]
+  recruiter       RecruiterProfile @relation(fields: [recruiterId], references: [id])
+}
+
+model Application {
+  id           String            @id @default(cuid())
+  jobId        String
+  candidateId  String
+  appliedAt    DateTime          @default(now())
+  status       ApplicationStatus @default(PENDING)
+  extraAnswers Json?
+  candidate    CandidateProfile  @relation(fields: [candidateId], references: [id], onDelete: Cascade)
+  job          Job               @relation(fields: [jobId], references: [id])
+}
+
+model ApplicationGroup {
+  id             String           @id @default(cuid())
+  name           String
+  recruiterId    String
+  applicationIds String[]
+  createdAt      DateTime         @default(now())
+  updatedAt      DateTime         @updatedAt
+  recruiter      RecruiterProfile @relation(fields: [recruiterId], references: [id])
+}
+
+model Pipeline {
+  id          String           @id @default(cuid())
+  name        String
+  industry    String
+  recruiterId String
+  createdAt   DateTime         @default(now())
+  recruiter   RecruiterProfile @relation(fields: [recruiterId], references: [id])
+
+  @@index([recruiterId, createdAt])
+}
+
+enum Role {
+  CANDIDATE
+  RECRUITER
+  COLLEGE
+}
+
+enum ApplicationStatus {
+  PENDING
+  REVIEWED
+  REJECTED
+  ACCEPTED
+}
+
+enum JobType {
+  FULL_TIME
+  PART_TIME
+  CONTRACT
+  INTERNSHIP
+}
+
+enum LocationPref {
+  REMOTE
+  HYBRID
+  ONSITE
+}
+
+enum ExperienceRange {
+  ZERO_TO_TWO
+  TWO_TO_FIVE
+  FIVE_TO_TEN
+  TEN_PLUS
+}
+
+enum SkillLevel {
+  BEGINNER
+  INTERMEDIATE
+  ADVANCED
+  EXPERT
+}
+
+/// Additional enums for CandidateProfile
+enum EducationLevel {
+  HIGH_SCHOOL
+  DIPLOMA
+  BACHELORS
+  MASTERS
+  PHD
+}
+
+enum Gender {
+  MALE
+  FEMALE
+  OTHER
+}
+
+enum ShiftType {
+  DAY
+  NIGHT
+  ROTATIONAL
+}
+
+enum lookingfor {
+  LOOKING_FOR_JOBS
+  LOOKING_FOR_INTERNSHIPS
+  NOT_SEARCHING
+}
+
+enum NoticePeriod {
+  WITHIN_15_DAYS
+  ONE_MONTH
+  TWO_MONTHS
+  THREE_MONTHS
+}
+
+enum ExperienceType {
+  INTERNSHIP
+  FULL_TIME
+  CONTRACT
+  FREELANCE
+}
+
+enum PlacementStatus {
+  PLACED
+  INTERVIEWING
+  NOT_PLACED
+}
+
+enum Membership {
+  FREE
+  PREMIUM_YEARLY
+  PREMIUM_4_YEAR
+  PREMIUM_LIFETIME
+  SUBSCRIBED
+}
+
+enum PaymentStatus {
+  PENDING
+  COMPLETED
+  FAILED
+  REFUNDED
+  CANCELLED
+}
+
+enum PlanType {
+  YEARLY
+  FOUR_YEAR
+  LIFETIME
+}
